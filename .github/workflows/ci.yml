@@ -1,0 +1,27 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck scripts/*.sh
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint charts/web-app
+      - run: helm template demo charts/web-app --set autoscaling.enabled=true > rendered.yaml
+      - name: Policy check with conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.54.0/conftest_0.54.0_Linux_x86_64.tar.gz | tar xz
+          ./conftest test rendered.yaml -p policies
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive terraform-modules
+      - working-directory: terraform-modules/k8s-namespace
+        run: terraform init -backend=false && terraform validate
