@@ -28,4 +28,10 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  tls: false
+
 env: {}
